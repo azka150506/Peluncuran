@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AK1NF — Console (Single File)</title>
+<style>
+  /* Minimal hacker vibes: black & white, monospace */
+  :root { --bg: #000; --fg: #fff; --muted: #bfbfbf; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;}
+  .wrap{max-width:1100px;margin:28px auto;padding:18px;border-radius:6px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .logo{width:56px;height:56px;border-radius:8px;background:#111;display:grid;place-items:center;font-weight:800;font-size:18px}
+  h1{margin:0;font-weight:700}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  /* Pages layout */
+  .card{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:18px;border-radius:10px}
+  .center {display:flex;gap:18px;align-items:flex-start}
+  .col {flex:1}
+
+  /* Login */
+  .box {max-width:520px;margin:10px auto}
+  label{display:block;margin-bottom:6px;color:var(--muted);font-size:13px}
+  input[type=text], input[type=password], input[type=number]{
+    width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);
+    background:#070707;color:var(--fg);font-size:14px;
+  }
+  button{padding:10px 12px;border-radius:8px;border:0;background:#fff;color:#000;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--muted)}
+
+  /* Scan */
+  .scan-wrap{max-width:680px;margin:10px auto;text-align:left}
+  .progress{width:100%;height:14px;border-radius:8px;background:#070707;border:1px solid rgba(255,255,255,0.04);overflow:hidden}
+  .progress > i{display:block;height:100%;width:0%;background:#fff;transition:width 0.25s linear}
+
+  /* DDOS console */
+  .ddos-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .ddos-controls .col {flex:1;min-width:120px}
+  .terminal{margin-top:12px;background:#000;border:1px solid rgba(255,255,255,0.06);height:320px;overflow:auto;padding:12px;border-radius:8px;font-size:13px;line-height:1.35}
+  .term-line{white-space:pre-wrap}
+  .muted{color:var(--muted);font-size:13px}
+
+  /* Big status */
+  .status {margin-top:10px;font-weight:700;color:var(--muted)}
+
+  /* small niceties */
+  .small {font-size:12px;color:var(--muted)}
+  .centered {text-align:center}
+  footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+
+  /* typing cursor (for header little effect) */
+  .fake-cursor::after{content:"_";display:inline-block;margin-left:6px;opacity:1;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0}}
+
+  /* responsive */
+  @media (max-width:820px){.center{flex-direction:column}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">AK1NF</div>
+      <div>
+        <h1 class="cursor">AK1NF — Cyber  (DDOS)</h1>
+        <p class="lead">tidak untuk di salah gunakan pengiriman DDOS hanya dapat di lakulan oleh owner (akka).</p>
+      </div>
+    </header>
+
+    <!-- PAGE 1: LOGIN -->
+    <section id="page-login" class="card">
+      <div class="box">
+        <label class="small">AK1NF Cyber Login</label>
+        <input id="loginUser" type="text" placeholder="your username" />
+        <div style="height:8px"></div>
+        <input id="loginPass" type="password" placeholder="password" />
+        <div style="height:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="loginBtn">Login</button>
+          <button class="ghost" id="loginReset">Reset</button>
+        </div>
+        <div style="height:10px"></div>
+        <div class="small muted">Tip: DDOS ini mengandung sedikit tambahan yang dapat mengakibatkan server crash.</div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: SCAN (hidden initially) -->
+    <section id="page-scan" class="card" style="display:none">
+      <div class="scan-wrap">
+        <label class="small">Scanning user data...</label>
+        <div style="height:10px"></div>
+        <div class="progress"><i id="scanBar"></i></div>
+        <div style="height:8px"></div>
+        <div id="scanText" class="muted">Initializing...</div>
+        <div style="height:12px"></div>
+        <div class="small">Proses scan dibuat super ketat agar menjamin yang melakukan login hanya owner.</div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: DDOS (hidden initially) -->
+    <section id="page-ddos" class="card" style="display:none">
+      <div class="centered">
+        <div class="muted">AK1NF DDOS — enterting target</div>
+        <h2 style="margin:6px 0">Enter target</h2>
+      </div>
+
+      <div class="ddos-controls" style="margin-top:8px">
+        <div class="col">
+          <label class="small">Link / URL</label>
+          <input id="targetUrl" type="text" placeholder="https://example.com" />
+        </div>
+        <div style="width:140px">
+          <label class="small">Threads</label>
+          <input id="threads" type="number" min="1" max="999" value="20" />
+        </div>
+        <div style="width:140px">
+          <label class="small">Detik (fixed)</label>
+          <input id="seconds" type="number" value="50" disabled />
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button id="launchBtn">🚀 Launch</button>
+          <button id="stopBtn" class="ghost" disabled>STOP</button>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+      <div class="small muted">Tombol dekoratif: Matikan Web💀 / Trash Web♨️ / Manipulasi Web🚫 — one tap.</div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="ghost" id="btnKill">Matikan Web</button>
+        <button class="ghost" id="btnTrash">Trash Web</button>
+        <button class="ghost" id="btnManip">Manipulasi Web</button>
+        <div style="flex:1"></div>
+        <div class="status" id="statusLabel">status: idle</div>
+      </div>
+
+      <div class="terminal" id="terminal" aria-live="polite"></div>
+
+      <div style="height:8px"></div>
+      <div class="centered">
+        <div class="small muted">Setelah 50 detik selesai, prank akan otomatis kembali ke login.</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="small muted">Disclaimer: untuk pengiriman ke instagram,tiktok,facebook akan di arahkan ke aksifitas.</div>
+    </footer>
+  </div>
+
+<script>
+/* ------------------------------
+   Akka's — Single Page JS
+   Purely visual.
+   ------------------------------ */
+
+const pageLogin = document.getElementById('page-login');
+const pageScan  = document.getElementById('page-scan');
+const pageDdos  = document.getElementById('page-ddos');
+
+const loginBtn = document.getElementById('loginBtn');
+const loginReset = document.getElementById('loginReset');
+
+const scanBar = document.getElementById('scanBar');
+const scanText = document.getElementById('scanText');
+
+const launchBtn = document.getElementById('launchBtn');
+const stopBtn = document.getElementById('stopBtn');
+const terminal = document.getElementById('terminal');
+const statusLabel = document.getElementById('statusLabel');
+
+const btnKill = document.getElementById('btnKill');
+const btnTrash = document.getElementById('btnTrash');
+const btnManip = document.getElementById('btnManip');
+
+let ddosTimer = null;
+let ddosTickInterval = null;
+let ddosRemaining = 0;
+
+/* Utility: scroll terminal to bottom */
+function termAppend(line){
+  const el = document.createElement('div');
+  el.className = 'term-line';
+  el.textContent = line;
+  terminal.appendChild(el);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+/* Random code generator using patterns similar to user's examples.
+   We'll produce numbers like 3-digit to 9-digit, frequently 3-digit groups.
+*/
+function randomCode(){
+  // mix of user-like samples and random 3-9 digit numbers
+  const samples = [300,716,916,514,527,815,404,133,777,888,999,420,1337];
+  if(Math.random() < 0.35) return samples[Math.floor(Math.random()*samples.length)];
+  // generate 3-9 digit random number
+  const digits = 3 + Math.floor(Math.random()*6); // 3..8
+  let s = '';
+  for(let i=0;i<digits;i++) s += Math.floor(Math.random()*10);
+  return s;
+}
+
+/* typing visual (makes line look like printed quickly) */
+function typeLine(prefix, code, cb){
+  // build string instantly but show a tiny 'typing' effect by chunking
+  const full = `${prefix}${code}`;
+  let i = 0;
+  const chunk = 4; // characters per step
+  const t = setInterval(()=>{
+    i += chunk;
+    const partial = full.slice(0, i);
+    // temporary line
+    if(cb) cb(partial);
+    if(i >= full.length){
+      clearInterval(t);
+      if(cb) cb(full, true);
+    }
+  }, 18); // very fast typing
+}
+
+/* PAGE FLOW: Login -> Scan -> DDOS */
+loginBtn.addEventListener('click', ()=>{
+  // accept any credentials
+  pageLogin.style.display = 'none';
+  pageScan.style.display = 'block';
+  startScan();
+});
+loginReset.addEventListener('click', ()=>{
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+});
+
+/* Scan animation */
+function startScan(){
+  scanBar.style.width = '0%';
+  scanText.textContent = 'Initializing scan...';
+  let progress = 0;
+  const messages = [
+    'Checking firewall signatures...',
+    'Enumerating open ports...',
+    'Resolving DNS cache...',
+    'Analyzing user tokens...',
+    'Cross-referencing leaked credentials...',
+    'No critical flags detected...',
+    'Pulling public metadata...',
+    'Verifying session cookies...'
+  ];
+  const timer = setInterval(()=>{
+    // increase progress by varying amounts for drama
+    progress += 8 + Math.floor(Math.random()*12);
+    if(progress > 100) progress = 100;
+    scanBar.style.width = progress + '%';
+    scanText.textContent = messages[Math.floor(Math.random()*messages.length)] + ' — ' + progress + '%';
+
+    if(progress >= 100){
+      clearInterval(timer);
+      scanText.textContent = 'Scan complete — preparing console...';
+      setTimeout(()=>{ // move to ddos page
+        pageScan.style.display = 'none';
+        pageDdos.style.display = 'block';
+        statusLabel.textContent = 'status: ready';
+        termAppend('[sys] Ready for AK1NF DDOS.');
+      }, 900);
+    }
+  }, 300);
+}
+
+/* Decorative buttons (no-op) */
+[btnKill, btnTrash, btnManip].forEach(b=>{
+  b.addEventListener('click', ()=>{
+    termAppend(`[ui] tombol '${b.textContent}' diklik — fitur dekoratif (no-op).`);
+  });
+});
+
+/* Stop button for manual stop */
+stopBtn.addEventListener('click', ()=>{
+  if(ddosTimer || ddosTickInterval){
+    endDdos('stopped by user (visual).');
+  }
+});
+
+/* Launch DDOS: runs for fixed 50 seconds */
+launchBtn.addEventListener('click', ()=>{
+  if(ddosTimer) return; // already running
+  terminal.innerHTML = ''; // clear
+  const target = (document.getElementById('targetUrl').value || 'target.mock').trim();
+  const threads = Math.max(1, parseInt(document.getElementById('threads').value || '20'));
+  const seconds = 50; // fixed per Akka request
+  ddosRemaining = seconds;
+
+  termAppend(`[attack] START (DDOS) -> ${target} | threads:${threads} | dur:${seconds}s`);
+  statusLabel.textContent = 'status: attacking';
+  launchBtn.disabled = true;
+  stopBtn.disabled = false;
+
+  // cadence: produce bursts. We'll print a few packet lines per second.
+  // Let a 'burstRate' depend on threads but clip so it's not too heavy.
+  const burstRate = Math.min(6, 1 + Math.floor(threads / 20)); // 1..6 lines per tick
+  const intervalMs = 1000; // tick each second, but inside tick we print bursts quickly
+
+  ddosTickInterval = setInterval(()=>{
+    // each tick, emit a few lines
+    for(let i=0;i<burstRate;i++){
+      // create a random code like examples
+      const code = randomCode();
+      // print with a tiny typing effect then finalize
+      typeLine('Sending packet#', code, (partial, done)=>{
+        if(!done){
+          // show or update the last temp line
+          const last = terminal.lastElementChild;
+          if(last && last.dataset && last.dataset.temp === '1'){
+            last.textContent = partial;
+          } else {
+            const d = document.createElement('div');
+            d.className = 'term-line';
+            d.dataset.temp = '1';
+            d.textContent = partial;
+            terminal.appendChild(d);
+          }
+          terminal.scrollTop = terminal.scrollHeight;
+        } else {
+          // finalize line (remove temp flag)
+          const last = terminal.lastElementChild;
+          if(last && last.dataset && last.dataset.temp === '1'){
+            last.textContent = partial;
+            last.dataset.temp = '0';
+          } else {
+            const d = document.createElement('div');
+            d.className = 'term-line';
+            d.textContent = partial;
+            terminal.appendChild(d);
+          }
+          terminal.scrollTop = terminal.scrollHeight;
+        }
+      });
+    }
+    // timer tick line
+    termAppend(`[timer] remaining ${--ddosRemaining}s`);
+    if(ddosRemaining <= 0){
+      // done
+      endDdos('completed (visual).');
+    }
+  }, intervalMs);
+
+  // Safety timer guard (force stop after seconds)
+  ddosTimer = setTimeout(()=>{
+    if(ddosTickInterval) { /* handled in tick end */ }
+  }, seconds * 1000 + 1500);
+});
+
+/* End ddos sequence and reset to login */
+function endDdos(reason){
+  if(ddosTickInterval){ clearInterval(ddosTickInterval); ddosTickInterval = null; }
+  if(ddosTimer){ clearTimeout(ddosTimer); ddosTimer = null; }
+  termAppend(`[attack] finished (visual) — ${reason}`);
+  statusLabel.textContent = 'status: idle';
+  launchBtn.disabled = false;
+  stopBtn.disabled = true;
+  // after short pause, auto-return to login screen
+  setTimeout(()=>{
+    termAppend('[sys] returning to login...');
+    // reset fields
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('targetUrl').value = '';
+    document.getElementById('threads').value = '20';
+    // hide ddos -> show login
+    pageDdos.style.display = 'none';
+    pageLogin.style.display = 'block';
+    terminal.innerHTML = '';
+    scanBar.style.width = '0%';
+    scanText.textContent = 'Initializing...';
+    statusLabel.textContent = 'status: idle';
+  }, 1400);
+}
+
+/* Initial quick note in terminal (on load) */
+termAppend('[sys] visual work.');
+</script>
+</body>
+</html>
